@@ -549,18 +549,13 @@ class LogicCircuitSimulator(ctk.CTk):
         if not self.simulation_mode:
             return
 
-        # Create dictionary for storing input values of each element
         input_values = {element: [] for element in self.elements}
-        
-        # Create dictionary for storing output values of each element
         output_values = {element: element.value for element in self.elements}
 
-        # Collect all input values for each element
         for conn in self.connections:
             start_port = conn[1]
             end_port = conn[2]
             
-            # Find elements connected through these ports
             start_element = None
             end_element = None
             
@@ -573,15 +568,10 @@ class LogicCircuitSimulator(ctk.CTk):
             if start_element and end_element:
                 input_values[end_element].append(output_values[start_element])
 
-        # Process each element
         for element in self.elements:
             if element.element_type == "INPUT":
-                continue  # Skip input elements, their values are already set
-
-            # Get input values for the element
+                continue  
             inputs = input_values[element]
-            
-            # Calculate output value based on element type
             if element.element_type == "AND":
                 element.value = all(inputs) if inputs else False
             elif element.element_type == "OR":
@@ -591,27 +581,20 @@ class LogicCircuitSimulator(ctk.CTk):
             elif element.element_type == "XOR":
                 element.value = sum(inputs) % 2 == 1 if inputs else False
             elif element.element_type == "OUTPUT":
-                # For LED, take value from input
                 if inputs:
                     element.value = inputs[0]
                 else:
                     element.value = False
 
-            # Update output value in dictionary
             output_values[element] = element.value
-
-            # Update visual state of element
             if element.element_type == "OUTPUT":
                 if element.value:
-                    # If input is 1 - LED is red
                     self.canvas.itemconfig(element.rect, fill="red", outline="red")
                     self.canvas.itemconfig(element.text, fill="white")
                 else:
-                    # If input is 0 - LED is white
                     self.canvas.itemconfig(element.rect, fill="#2b2b2b", outline="#404040")
                     self.canvas.itemconfig(element.text, fill="#ffffff")
             else:
-                # For logic elements, update output port color
                 color = "#00ff00" if element.value else "#404040"
                 self.canvas.itemconfig(element.output, fill=color)
 
@@ -731,7 +714,7 @@ class LogicCircuitSimulator(ctk.CTk):
                         min_distance = distance
                         closest_port = port
         
-        return closest_port if min_distance < 20 else None  # Return port if within 20 pixels
+        return closest_port if min_distance < 20 else None 
 
     def on_canvas_click(self, event):
         if self.simulation_mode:
@@ -832,7 +815,6 @@ class LogicCircuitSimulator(ctk.CTk):
                 (end_coords[0] + end_coords[2])/2,
                 (end_coords[1] + end_coords[3])/2
             )
-            # Update simulation if in simulation mode
             if self.simulation_mode:
                 self.update_simulation()
 

@@ -536,8 +536,11 @@ class LogicCircuitSimulator(ctk.CTk):
                     self.canvas.itemconfig(element.button_highlight, outline="#404040")
                     self.canvas.itemconfig(element.output, fill="#404040")
                 elif element.element_type == "OUTPUT":
+                    element.value = False
                     self.canvas.itemconfig(element.rect, fill="#2b2b2b")
                 else:
+                    # Reset logic gate values to False
+                    element.value = False
                     self.canvas.itemconfig(element.output, fill="#404040")
                     
             self.update_simulation()
@@ -549,18 +552,12 @@ class LogicCircuitSimulator(ctk.CTk):
         if not self.simulation_mode:
             return
 
-        # Create dictionary for storing input values of each element
-        input_values = {element: [] for element in self.elements}
-        
-        # Create dictionary for storing output values of each element
-        output_values = {element: element.value for element in self.elements}
-
-        # Collect all input values for each element
+        # Build dependency graph
+        dependencies = {element: [] for element in self.elements}
         for conn in self.connections:
             start_port = conn[1]
             end_port = conn[2]
             
-            # Find elements connected through these ports
             start_element = None
             end_element = None
             
@@ -571,34 +568,73 @@ class LogicCircuitSimulator(ctk.CTk):
                     end_element = element
                     
             if start_element and end_element:
-                input_values[end_element].append(output_values[start_element])
+                dependencies[end_element].append(start_element)
 
-        # Process each element
+        # Topological sort to process elements in correct order
+        processed = set()
+        processing_order = []
+        
+        def visit(element):
+            if element in processed:
+                return
+            if element.element_type == "INPUT":
+                processed.add(element)
+                processing_order.append(element)
+                return
+            
+            # Process dependencies first
+            for dep in dependencies[element]:
+                if dep not in processed:
+                    visit(dep)
+            
+            processed.add(element)
+            processing_order.append(element)
+        
+        # Visit all elements
         for element in self.elements:
+            if element not in processed:
+                visit(element)
+
+        # Process elements in topological order
+        for element in processing_order:
             if element.element_type == "INPUT":
                 continue  # Skip input elements, their values are already set
 
-            # Get input values for the element
-            inputs = input_values[element]
-            
+            # Collect input values from connected elements
+            inputs = []
+            for conn in self.connections:
+                start_port = conn[1]
+                end_port = conn[2]
+                
+                if end_port in element.inputs:
+                    # Find the element that owns the start_port
+                    for other_element in self.elements:
+                        if start_port == other_element.output:
+                            inputs.append(other_element.value)
+                            break
+
             # Calculate output value based on element type
             if element.element_type == "AND":
+                # AND: output is True only if all inputs are True
                 element.value = all(inputs) if inputs else False
             elif element.element_type == "OR":
+                # OR: output is True if any input is True
                 element.value = any(inputs) if inputs else False
             elif element.element_type == "NOT":
-                element.value = not inputs[0] if inputs else False
+                # NOT: output is inverse of input
+                if inputs:
+                    element.value = not bool(inputs[0])
+                else:
+                    element.value = False
             elif element.element_type == "XOR":
-                element.value = sum(inputs) % 2 == 1 if inputs else False
+                # XOR: output is True if odd number of inputs are True
+                element.value = (sum(inputs) % 2 == 1) if inputs else False
             elif element.element_type == "OUTPUT":
                 # For LED, take value from input
                 if inputs:
-                    element.value = inputs[0]
+                    element.value = bool(inputs[0])
                 else:
                     element.value = False
-
-            # Update output value in dictionary
-            output_values[element] = element.value
 
             # Update visual state of element
             if element.element_type == "OUTPUT":
