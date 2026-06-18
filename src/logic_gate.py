@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 import json
 import math
 import tkinter as tk
+from parser import LogicCircuitParser
 
 class LogicalElement:
     def __init__(self, canvas, x, y, element_type):
@@ -16,7 +17,7 @@ class LogicalElement:
         self.rect = None
         self.text = None
         self.button_highlight = None
-        self.simulator = None  # Add reference to simulator
+        self.simulator = None
         self.create_visual()
         
     def set_simulator(self, simulator):
@@ -37,7 +38,6 @@ class LogicalElement:
             self.draw_output_device()
             
     def draw_and_gate(self):
-        # Draw AND gate with rounded corners
         self.rect = self.canvas.create_rectangle(
             self.x, self.y, self.x+50, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -46,17 +46,13 @@ class LogicalElement:
             self.x+25, self.y+20,
             text="AND", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create input ports
         self.inputs = [
             self.create_port(self.x, self.y+10, "input"),
             self.create_port(self.x, self.y+30, "input")
         ]
-        # Create output port
         self.output = self.create_port(self.x+50, self.y+20, "output")
         
     def draw_or_gate(self):
-        # Draw OR gate with rounded corners
         self.rect = self.canvas.create_rectangle(
             self.x, self.y, self.x+50, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -65,17 +61,13 @@ class LogicalElement:
             self.x+25, self.y+20,
             text="OR", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create input ports
         self.inputs = [
             self.create_port(self.x, self.y+10, "input"),
             self.create_port(self.x, self.y+30, "input")
         ]
-        # Create output port
         self.output = self.create_port(self.x+50, self.y+20, "output")
         
     def draw_not_gate(self):
-        # Draw NOT gate with rounded corners
         self.rect = self.canvas.create_rectangle(
             self.x, self.y, self.x+50, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -84,14 +76,10 @@ class LogicalElement:
             self.x+25, self.y+20,
             text="NOT", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create input port
         self.inputs = [self.create_port(self.x, self.y+20, "input")]
-        # Create output port
         self.output = self.create_port(self.x+50, self.y+20, "output")
         
     def draw_xor_gate(self):
-        # Draw XOR gate with rounded corners
         self.rect = self.canvas.create_rectangle(
             self.x, self.y, self.x+50, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -100,17 +88,13 @@ class LogicalElement:
             self.x+25, self.y+20,
             text="XOR", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create input ports
         self.inputs = [
             self.create_port(self.x, self.y+10, "input"),
             self.create_port(self.x, self.y+30, "input")
         ]
-        # Create output port
         self.output = self.create_port(self.x+50, self.y+20, "output")
         
     def draw_input_device(self):
-        # Draw input device (button)
         self.rect = self.canvas.create_rectangle(
             self.x, self.y, self.x+50, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -119,18 +103,13 @@ class LogicalElement:
             self.x+25, self.y+20,
             text="IN", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create output port
         self.output = self.create_port(self.x+50, self.y+20, "output")
-        
-        # Add button-like appearance
         self.button_highlight = self.canvas.create_rectangle(
             self.x+2, self.y+2, self.x+48, self.y+38,
             fill="", outline="#505050", width=1
         )
         
     def draw_output_device(self):
-        # Draw LED symbol (circle with input)
         self.rect = self.canvas.create_oval(
             self.x, self.y, self.x+40, self.y+40,
             fill="#2b2b2b", outline="#404040", width=2
@@ -139,8 +118,6 @@ class LogicalElement:
             self.x+20, self.y+20,
             text="LED", fill="#ffffff", font=("Helvetica", 12, "bold")
         )
-        
-        # Create input port
         self.inputs = [self.create_port(self.x, self.y+20, "input")]
         
     def create_port(self, x, y, port_type):
@@ -148,29 +125,22 @@ class LogicalElement:
             x-5, y-5, x+5, y+5,
             fill="#404040", outline="#505050", width=1
         )
-        # Bind click event directly to simulator's on_port_click
         self.canvas.tag_bind(port, "<Button-1>", 
                            lambda e, p=port, t=port_type: self.simulator.on_port_click(p, t))
         return port
 
     def move(self, dx, dy):
-        # Update element position
         self.x += dx
         self.y += dy
         
-        # Move all visual elements
         if self.rect:
             self.canvas.move(self.rect, dx, dy)
         if self.text:
             self.canvas.move(self.text, dx, dy)
         if self.button_highlight:
             self.canvas.move(self.button_highlight, dx, dy)
-            
-        # Move input ports
         for port in self.inputs:
             self.canvas.move(port, dx, dy)
-            
-        # Move output port
         if self.output:
             self.canvas.move(self.output, dx, dy)
 
@@ -178,20 +148,15 @@ class LogicCircuitSimulator(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        # Configure window
         self.title("Logic Circuit Simulator")
         self.geometry("1200x800")
-        
-        # Set initial theme to dark
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
         
-        # Create main frames
         self.create_toolbar()
         self.create_canvas()
         self.create_sidebar()
         
-        # Initialize variables
         self.elements = []
         self.connections = []
         self.selected_port = None
@@ -200,9 +165,7 @@ class LogicCircuitSimulator(ctk.CTk):
         self.drag_start_x = 0
         self.drag_start_y = 0
         self.selected_element = None
-        self.current_theme = "dark"  # Add theme tracking
-        
-        # Bind canvas events
+        self.current_theme = "dark"
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.canvas.bind("<B1-Motion>", self.on_canvas_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_canvas_release)
@@ -213,26 +176,26 @@ class LogicCircuitSimulator(ctk.CTk):
         self.toolbar = ctk.CTkFrame(self, height=40)
         self.toolbar.pack(fill="x", padx=5, pady=5)
         
-        # File operations
         ctk.CTkButton(self.toolbar, text="New", command=self.new_scheme).pack(side="left", padx=5)
         ctk.CTkButton(self.toolbar, text="Open", command=self.open_scheme).pack(side="left", padx=5)
         ctk.CTkButton(self.toolbar, text="Save", command=self.save_scheme).pack(side="left", padx=5)
         
-        # Simulation controls
         self.sim_button = ctk.CTkButton(
             self.toolbar, text="Start Simulation",
             command=self.toggle_simulation
         )
         self.sim_button.pack(side="left", padx=5)
         
-        # Theme toggle
         self.theme_button = ctk.CTkButton(
             self.toolbar, text="Toggle Theme",
             command=self.toggle_theme
         )
         self.theme_button.pack(side="left", padx=5)
         
-        # Status label
+        ctk.CTkButton(
+            self.toolbar, text="Get Expression",
+            command=self.get_expression
+        ).pack(side="left", padx=5)
         self.status_label = ctk.CTkLabel(
             self.toolbar, text="Ready",
             font=("Helvetica", 12)
@@ -240,11 +203,9 @@ class LogicCircuitSimulator(ctk.CTk):
         self.status_label.pack(side="right", padx=5)
         
     def create_canvas(self):
-        # Create canvas with scrollbars
         self.canvas_frame = ctk.CTkFrame(self)
         self.canvas_frame.pack(side="left", fill="both", expand=True)
         
-        # Use regular tkinter Canvas instead of CTkCanvas
         self.canvas = tk.Canvas(
             self.canvas_frame,
             bg="#1a1a1a",
@@ -277,14 +238,12 @@ class LogicCircuitSimulator(ctk.CTk):
         self.sidebar = ctk.CTkFrame(self, width=200)
         self.sidebar.pack(side="right", fill="y", padx=5, pady=5)
         
-        # Add element buttons
         ctk.CTkLabel(
             self.sidebar,
             text="Elements",
             font=("Helvetica", 16, "bold")
         ).pack(pady=10)
         
-        # Create buttons with consistent styling
         button_style = {
             "font": ("Helvetica", 12),
             "height": 35,
@@ -333,7 +292,6 @@ class LogicCircuitSimulator(ctk.CTk):
             **button_style
         ).pack(fill="x", padx=10, pady=5)
         
-        # Add clear button
         ctk.CTkButton(
             self.sidebar,
             text="Clear All",
@@ -344,15 +302,12 @@ class LogicCircuitSimulator(ctk.CTk):
         ).pack(fill="x", padx=10, pady=20)
         
     def toggle_theme(self):
-        # Toggle between dark and light themes
         self.current_theme = "light" if self.current_theme == "dark" else "dark"
         ctk.set_appearance_mode(self.current_theme)
         
-        # Update canvas background
         bg_color = "#f0f0f0" if self.current_theme == "light" else "#1a1a1a"
         self.canvas.configure(bg=bg_color)
         
-        # Update element colors
         for element in self.elements:
             if element.element_type == "OUTPUT":
                 if element.value:
@@ -363,7 +318,6 @@ class LogicCircuitSimulator(ctk.CTk):
                                          outline="#808080" if self.current_theme == "light" else "#404040")
                     self.canvas.itemconfig(element.text, fill="#000000" if self.current_theme == "light" else "#ffffff")
             else:
-                # For logic elements
                 element_bg = "#ffffff" if self.current_theme == "light" else "#2b2b2b"
                 element_outline = "#808080" if self.current_theme == "light" else "#404040"
                 text_color = "#000000" if self.current_theme == "light" else "#ffffff"
@@ -371,7 +325,6 @@ class LogicCircuitSimulator(ctk.CTk):
                 self.canvas.itemconfig(element.rect, fill=element_bg, outline=element_outline)
                 self.canvas.itemconfig(element.text, fill=text_color)
                 
-                # Update ports
                 port_fill = "#a0a0a0" if self.current_theme == "light" else "#404040"
                 port_outline = "#808080" if self.current_theme == "light" else "#505050"
                 
@@ -383,12 +336,10 @@ class LogicCircuitSimulator(ctk.CTk):
                     else:
                         self.canvas.itemconfig(element.output, fill=port_fill, outline=port_outline)
                 
-                # Update button highlight for input elements
                 if element.element_type == "INPUT" and element.button_highlight:
                     highlight_color = "#c0c0c0" if self.current_theme == "light" else "#505050"
                     self.canvas.itemconfig(element.button_highlight, outline=highlight_color)
         
-        # Update connections - white in dark theme, black in light theme
         connection_color = "#000000" if self.current_theme == "light" else "#ffffff"
         for conn in self.connections:
             self.canvas.itemconfig(conn[0], fill=connection_color, width=2)
@@ -399,8 +350,6 @@ class LogicCircuitSimulator(ctk.CTk):
         self.elements.append(element)
         
     def on_port_click(self, port, port_type):
-        print(f"Port click: type={port_type}")  # Debug print
-        
         if self.simulation_mode:
             if port_type == "input":
                 element = self.find_element_by_port(port)
@@ -418,101 +367,73 @@ class LogicCircuitSimulator(ctk.CTk):
             return
             
         if self.selected_port is None:
-            print("First port selected")  # Debug print
             self.selected_port = (port, port_type)
             self.canvas.itemconfig(port, fill="#00ff00")
             self.status_label.configure(text="Select second port")
         else:
-            print("Second port selected")  # Debug print
             if self.selected_port[0] == port:
-                # Deselect if clicking the same port
                 self.canvas.itemconfig(port, fill="#404040")
                 self.selected_port = None
                 self.status_label.configure(text="Ready")
                 return
                 
-            # Create connection
             if self.is_valid_connection(self.selected_port[1], port_type):
-                print("Creating connection")  # Debug print
                 self.create_connection(self.selected_port[0], port)
                 self.status_label.configure(text="Connection created")
             else:
-                print("Invalid connection")  # Debug print
                 self.status_label.configure(text="Invalid connection")
                 
-            # Reset selection
             self.canvas.itemconfig(self.selected_port[0], fill="#404040")
             self.selected_port = None
             self.status_label.configure(text="Ready")
 
     def is_valid_connection(self, port1_type, port2_type):
-        # Check if trying to connect output to input
         if port1_type == "output" and port2_type == "input":
             return True
-        # Check if trying to connect input to output
         if port1_type == "input" and port2_type == "output":
             return True
         return False
                
     def create_connection(self, start_port, end_port):
         try:
-            print("Starting connection creation")  # Debug print
-            # Get coordinates
             start_coords = self.canvas.coords(start_port)
             end_coords = self.canvas.coords(end_port)
             
-            print(f"Start coords: {start_coords}")  # Debug print
-            print(f"End coords: {end_coords}")  # Debug print
-            
             if not start_coords or not end_coords:
-                print("Invalid coordinates")  # Debug print
                 self.status_label.configure(text="Error: Invalid port coordinates")
                 return
                 
-            # Calculate center points of the ports
             start_x = (start_coords[0] + start_coords[2]) / 2
             start_y = (start_coords[1] + start_coords[3]) / 2
             end_x = (end_coords[0] + end_coords[2]) / 2
             end_y = (end_coords[1] + end_coords[3]) / 2
             
-            # Create line
             line = self.canvas.create_line(
                 start_x, start_y,
                 end_x, end_y,
                 fill="#ffffff", width=2,
-                tags=("connection",)  # Add tag for easier identification
+                tags=("connection",)
             )
-            print(f"Line created: {line}")  # Debug print
             
-            # Bind right-click event to delete connection
             self.canvas.tag_bind(line, "<Button-3>", lambda e: self.delete_connection(line))
             
-            # Store connection
             self.connections.append((line, start_port, end_port))
-            print(f"Connection stored. Total connections: {len(self.connections)}")  # Debug print
             
-            # Update simulation if in simulation mode
             if self.simulation_mode:
                 self.update_simulation()
                 
             self.status_label.configure(text="Connection created")
         except Exception as e:
-            print(f"Error in create_connection: {str(e)}")  # Debug print
             self.status_label.configure(text=f"Error creating connection: {str(e)}")
-            # Reset selection
             if self.selected_port:
                 self.canvas.itemconfig(self.selected_port[0], fill="#404040")
                 self.selected_port = None
 
     def delete_connection(self, line):
-        # Find and remove the connection
         for i, conn in enumerate(self.connections):
             if conn[0] == line:
-                # Delete the line from canvas
                 self.canvas.delete(line)
-                # Remove from connections list
                 self.connections.pop(i)
-                # Update simulation if in simulation mode
                 if self.simulation_mode:
                     self.update_simulation()
                 break
@@ -552,7 +473,6 @@ class LogicCircuitSimulator(ctk.CTk):
         if not self.simulation_mode:
             return
 
-        # Build dependency graph
         dependencies = {element: [] for element in self.elements}
         for conn in self.connections:
             start_port = conn[1]
@@ -570,7 +490,6 @@ class LogicCircuitSimulator(ctk.CTk):
             if start_element and end_element:
                 dependencies[end_element].append(start_element)
 
-        # Topological sort to process elements in correct order
         processed = set()
         processing_order = []
         
@@ -582,7 +501,6 @@ class LogicCircuitSimulator(ctk.CTk):
                 processing_order.append(element)
                 return
             
-            # Process dependencies first
             for dep in dependencies[element]:
                 if dep not in processed:
                     visit(dep)
@@ -590,64 +508,50 @@ class LogicCircuitSimulator(ctk.CTk):
             processed.add(element)
             processing_order.append(element)
         
-        # Visit all elements
         for element in self.elements:
             if element not in processed:
                 visit(element)
 
-        # Process elements in topological order
         for element in processing_order:
             if element.element_type == "INPUT":
-                continue  # Skip input elements, their values are already set
+                continue
 
-            # Collect input values from connected elements
             inputs = []
             for conn in self.connections:
                 start_port = conn[1]
                 end_port = conn[2]
                 
                 if end_port in element.inputs:
-                    # Find the element that owns the start_port
                     for other_element in self.elements:
                         if start_port == other_element.output:
                             inputs.append(other_element.value)
                             break
 
-            # Calculate output value based on element type
             if element.element_type == "AND":
-                # AND: output is True only if all inputs are True
                 element.value = all(inputs) if inputs else False
             elif element.element_type == "OR":
-                # OR: output is True if any input is True
                 element.value = any(inputs) if inputs else False
             elif element.element_type == "NOT":
-                # NOT: output is inverse of input
                 if inputs:
                     element.value = not bool(inputs[0])
                 else:
                     element.value = False
             elif element.element_type == "XOR":
-                # XOR: output is True if odd number of inputs are True
                 element.value = (sum(inputs) % 2 == 1) if inputs else False
             elif element.element_type == "OUTPUT":
-                # For LED, take value from input
                 if inputs:
                     element.value = bool(inputs[0])
                 else:
                     element.value = False
 
-            # Update visual state of element
             if element.element_type == "OUTPUT":
                 if element.value:
-                    # If input is 1 - LED is red
                     self.canvas.itemconfig(element.rect, fill="red", outline="red")
                     self.canvas.itemconfig(element.text, fill="white")
                 else:
-                    # If input is 0 - LED is white
                     self.canvas.itemconfig(element.rect, fill="#2b2b2b", outline="#404040")
                     self.canvas.itemconfig(element.text, fill="#ffffff")
             else:
-                # For logic elements, update output port color
                 color = "#00ff00" if element.value else "#404040"
                 self.canvas.itemconfig(element.output, fill=color)
 
@@ -701,6 +605,40 @@ class LogicCircuitSimulator(ctk.CTk):
             }
             with open(file_path, "w") as f:
                 json.dump(data, f)
+    
+    def get_expression(self):
+        try:
+            circuit_data = {
+                "elements": [
+                    {
+                        "type": element.element_type,
+                        "x": element.x,
+                        "y": element.y
+                    }
+                    for element in self.elements
+                ],
+                "connections": [
+                    {
+                        "start": self.canvas.coords(conn[1]),
+                        "end": self.canvas.coords(conn[2])
+                    }
+                    for conn in self.connections
+                ]
+            }
+            
+            parser = LogicCircuitParser(circuit_data)
+            result = parser.parse().build_expression()
+            
+            expression_text = f"Full Expression:\n{result['full_expression']}\n\n"
+            expression_text += "Output Expressions:\n"
+            for expr in result['output_expressions']:
+                expression_text += f"  {expr}\n"
+            
+            messagebox.showinfo("Logical Expression", expression_text)
+            self.status_label.configure(text="Expression generated")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to generate expression: {str(e)}")
+            self.status_label.configure(text="Error generating expression")
                 
     def open_scheme(self):
         file_path = filedialog.askopenfilename(
@@ -745,7 +683,6 @@ class LogicCircuitSimulator(ctk.CTk):
         min_distance = float('inf')
         
         for element in self.elements:
-            # Check output port
             if element.output:
                 port_coords = self.canvas.coords(element.output)
                 if port_coords:
@@ -756,7 +693,6 @@ class LogicCircuitSimulator(ctk.CTk):
                         min_distance = distance
                         closest_port = element.output
             
-            # Check input ports
             for port in element.inputs:
                 port_coords = self.canvas.coords(port)
                 if port_coords:
@@ -767,7 +703,7 @@ class LogicCircuitSimulator(ctk.CTk):
                         min_distance = distance
                         closest_port = port
         
-        return closest_port if min_distance < 20 else None  # Return port if within 20 pixels
+        return closest_port if min_distance < 20 else None
 
     def on_canvas_click(self, event):
         if self.simulation_mode:
@@ -868,7 +804,6 @@ class LogicCircuitSimulator(ctk.CTk):
                 (end_coords[0] + end_coords[2])/2,
                 (end_coords[1] + end_coords[3])/2
             )
-            # Update simulation if in simulation mode
             if self.simulation_mode:
                 self.update_simulation()
 
